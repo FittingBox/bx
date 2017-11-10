@@ -243,6 +243,17 @@ namespace bx
 #endif // BX_PLATFORM_
 	}
 
+	void Thread::push(void* _ptr)
+	{
+		m_queue.push(_ptr);
+	}
+
+	void* Thread::pop()
+	{
+		void* ptr = m_queue.pop();
+		return ptr;
+	}
+
 	int32_t Thread::entry()
 	{
 #if BX_PLATFORM_WINDOWS
@@ -251,7 +262,8 @@ namespace bx
 #endif // BX_PLATFORM_WINDOWS
 
 		m_sem.post();
-		return m_fn(m_userData);
+		int32_t result = m_fn(this, m_userData);
+		return result;
 	}
 
 	struct TlsDataInternal
