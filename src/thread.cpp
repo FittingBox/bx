@@ -3,6 +3,7 @@
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
+#include "bx_p.h"
 #include <bx/thread.h>
 
 #if    BX_PLATFORM_ANDROID \
@@ -35,6 +36,12 @@ using namespace Windows::System::Threading;
 
 namespace bx
 {
+	static AllocatorI* getAllocator()
+	{
+		static DefaultAllocator s_allocator;
+		return &s_allocator;
+	}
+
 	struct ThreadInternal
 	{
 #if    BX_PLATFORM_WINDOWS \
@@ -75,6 +82,7 @@ namespace bx
 	Thread::Thread()
 		: m_fn(NULL)
 		, m_userData(NULL)
+		, m_queue(getAllocator() )
 		, m_stackSize(0)
 		, m_exitCode(kExitSuccess)
 		, m_running(false)

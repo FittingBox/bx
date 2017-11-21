@@ -3,6 +3,7 @@
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
+#include "bx_p.h"
 #include <bx/cpu.h>
 #include <bx/math.h>
 #include <bx/string.h>
@@ -223,7 +224,7 @@ namespace bx
 		uint32_t index = static_cast<uint32_t>( (k >> 3) + 1);
 		*K = -(-348 + static_cast<int32_t>(index << 3) );	// decimal exponent no need lookup table
 
-		BX_CHECK(index < sizeof(s_kCachedPowers_F) / sizeof(s_kCachedPowers_F[0]) );
+		BX_CHECK(index < sizeof(s_kCachedPowers_F) / sizeof(s_kCachedPowers_F[0]), "");
 		return DiyFp(s_kCachedPowers_F[index], s_kCachedPowers_E[index]);
 	}
 
