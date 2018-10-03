@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -10,8 +10,7 @@
 #include <bx/string.h>
 
 #if !BX_CRT_NONE
-#	include <stdio.h> // vsnprintf, vsnwprintf
-#	include <wchar.h> // vswprintf
+#	include <stdio.h> // vsnprintf
 #endif // !BX_CRT_NONE
 
 namespace bx
@@ -54,7 +53,18 @@ namespace bx
 
 	bool isAlphaNum(char _ch)
 	{
-		return isAlpha(_ch) || isNumeric(_ch);
+		return false
+			|| isAlpha(_ch)
+			|| isNumeric(_ch)
+			;
+	}
+
+	bool isHexNum(char _ch)
+	{
+		return false
+			|| isInRange(toLower(_ch), 'a', 'f')
+			|| isNumeric(_ch)
+			;
 	}
 
 	bool isPrint(char _ch)
@@ -110,6 +120,11 @@ namespace bx
 		return isCharTest<isAlphaNum>(_str);
 	}
 
+	bool isHexNum(const StringView& _str)
+	{
+		return isCharTest<isHexNum>(_str);
+	}
+
 	bool isPrint(const StringView& _str)
 	{
 		return isCharTest<isPrint>(_str);
@@ -151,12 +166,6 @@ namespace bx
 	{
 		const int32_t len = strLen(_inOutStr, _max);
 		toUpperUnsafe(_inOutStr, len);
-	}
-
-	bool toBool(const char* _str)
-	{
-		char ch = toLower(_str[0]);
-		return ch == 't' ||  ch == '1';
 	}
 
 	typedef char (*CharFn)(char _ch);
@@ -446,6 +455,7 @@ namespace bx
 		const char* ptr   = _str.getPtr();
 		const char* chars = _chars.getPtr();
 		const uint32_t charsLen = _chars.getLength();
+
 		for (uint32_t ii = 0, len = _str.getLength(); ii < len; ++ii)
 		{
 			if (NULL == strFindUnsafe(chars, charsLen, ptr[ii]) )
@@ -459,6 +469,11 @@ namespace bx
 
 	StringView strRTrim(const StringView& _str, const StringView& _chars)
 	{
+		if (_str.isEmpty() )
+		{
+			return StringView();
+		}
+
 		const char* ptr   = _str.getPtr();
 		const char* chars = _chars.getPtr();
 		const uint32_t charsLen = _chars.getLength();
@@ -531,10 +546,17 @@ namespace bx
 		return _str;
 	}
 
-	const char* strword(const char* _str)
+	const char* strSkipWord(const char* _str, int32_t _max)
 	{
-		for (char ch = *_str++; isAlphaNum(ch) || '_' == ch; ch = *_str++) {};
+		for (char ch = *_str++; 0 < _max && (isAlphaNum(ch) || '_' == ch); ch = *_str++, --_max) {};
 		return _str-1;
+	}
+
+	StringView strWord(const StringView& _str)
+	{
+		const char* ptr  = _str.getPtr();
+		const char* term = strSkipWord(ptr, _str.getLength() );
+		return StringView(ptr, term);
 	}
 
 	const char* strmb(const char* _str, char _open, char _close)
@@ -1043,7 +1065,7 @@ namespace bx
 
 			if (err.isOk() )
 			{
-				return size;
+				return size - 1 /* size without '\0' terminator */;
 			}
 		}
 
@@ -1090,44 +1112,9 @@ namespace bx
 		return total;
 	}
 
-	int32_t vsnwprintf(wchar_t* _out, int32_t _max, const wchar_t* _format, va_list _argList)
-	{
-		va_list argList;
-		va_copy(argList, _argList);
-		int32_t total = 0;
-#if BX_CRT_NONE
-		BX_UNUSED(_out, _max, _format, argList);
-#elif BX_CRT_MSVC
-		int32_t len = -1;
-		if (NULL != _out)
-		{
-			va_list argListCopy;
-			va_copy(argListCopy, _argList);
-			len = ::_vsnwprintf_s(_out, _max, size_t(-1), _format, argListCopy);
-			va_end(argListCopy);
-		}
-		total = -1 == len ? ::_vscwprintf(_format, _argList) : len;
-#elif BX_CRT_MINGW
-		total = ::vsnwprintf(_out, _max, _format, argList);
-#else
-		total = ::vswprintf(_out, _max, _format, argList);
-#endif // BX_COMPILER_MSVC
-		va_end(argList);
-		return total;
-	}
+	static const char s_units[] = { 'B', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
 
-	int32_t swnprintf(wchar_t* _out, int32_t _max, const wchar_t* _format, ...)
-	{
-		va_list argList;
-		va_start(argList, _format);
-		int32_t len = vsnwprintf(_out, _max, _format, argList);
-		va_end(argList);
-		return len;
-	}
-
-	static const char s_units[] = { 'B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
-
-	template<uint32_t Kilo, char KiloCh0, char KiloCh1>
+	template<uint32_t Kilo, char KiloCh0, char KiloCh1, CharFn fn>
 	inline int32_t prettify(char* _out, int32_t _count, uint64_t _value)
 	{
 		uint8_t idx = 0;
@@ -1141,7 +1128,7 @@ namespace bx
 		}
 
 		return snprintf(_out, _count, "%0.2f %c%c%c", value
-			, s_units[idx]
+			, fn(s_units[idx])
 			, idx > 0 ? KiloCh0 : '\0'
 			, KiloCh1
 			);
@@ -1151,10 +1138,10 @@ namespace bx
 	{
 		if (Units::Kilo == _units)
 		{
-			return prettify<1000, 'B', '\0'>(_out, _count, _value);
+			return prettify<1000, 'B', '\0', toNoop>(_out, _count, _value);
 		}
 
-		return prettify<1024, 'i', 'B'>(_out, _count, _value);
+		return prettify<1024, 'i', 'B', toUpper>(_out, _count, _value);
 	}
 
 } // namespace bx

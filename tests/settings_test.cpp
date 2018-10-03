@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -40,7 +40,7 @@ TEST_CASE("Settings", "")
 	if (bx::open(&reader, filePath) )
 	{
 		bx::read(&reader, settings);
-		bx::close(&writer);
+		bx::close(&reader);
 	}
 
 	REQUIRE(NULL == settings.get("meh") );

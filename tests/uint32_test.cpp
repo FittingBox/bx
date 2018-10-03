@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -68,4 +68,30 @@ TEST_CASE("halfTo/FromFloat", "")
 		const uint16_t hff = bx::halfFromFloat(htf);
 		REQUIRE(orig == hff);
 	}
+}
+
+TEST_CASE("uint32_testpow2", "")
+{
+	uint32_t shift = 0;
+
+	for (uint32_t ii = 0; ii < UINT32_MAX; ++ii)
+	{
+		if (bx::uint32_testpow2(ii) )
+		{
+			REQUIRE(ii == 1 << shift);
+			++shift;
+		}
+	}
+}
+
+TEST_CASE("uint32_roX", "")
+{
+	REQUIRE(bx::uint32_rol(0x80000000, 1) == 1);
+	REQUIRE(bx::uint32_ror(1, 1) == 0x80000000);
+}
+
+TEST_CASE("uint64_roX", "")
+{
+	REQUIRE(bx::uint64_rol(0x8000000000000000, 1) == 1);
+	REQUIRE(bx::uint64_ror(1, 1) == 0x8000000000000000);
 }

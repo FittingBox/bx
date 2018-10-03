@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -123,4 +123,14 @@ TEST_CASE("FilePath temp", "")
 {
 	bx::FilePath tmp(bx::Dir::Temp);
 	REQUIRE(0 != bx::strCmp(".", tmp.getPath().getPtr() ) );
+
+	bx::Error err;
+	tmp.join("test/abvgd/555333/test");
+	REQUIRE(bx::makeAll(tmp, &err) );
+	REQUIRE(err.isOk() );
+
+	tmp.set(bx::Dir::Temp);
+	tmp.join("test");
+	REQUIRE(bx::removeAll(tmp, &err) );
+	REQUIRE(err.isOk() );
 }

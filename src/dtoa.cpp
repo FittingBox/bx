@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -314,7 +314,8 @@ namespace bx
 			if (p2 < delta)
 			{
 				*K += kappa;
-				GrisuRound(buffer, *len, delta, p2, one.f, wp_w.f * s_kPow10[-kappa]);
+				const int index = -static_cast<int>(kappa);
+				GrisuRound(buffer, *len, delta, p2, one.f, wp_w.f * (index < 9 ? s_kPow10[-static_cast<int>(kappa)] : 0));
 				return;
 			}
 		}
@@ -471,7 +472,7 @@ namespace bx
 	}
 
 	template<typename Ty>
-	int32_t toStringSigned(char* _dst, int32_t _max, Ty _value, uint32_t _base)
+	int32_t toStringSigned(char* _dst, int32_t _max, Ty _value, uint32_t _base, char _separator)
 	{
 		if (_base == 10
 		&&  _value < 0)
@@ -482,10 +483,11 @@ namespace bx
 			}
 
 			_max = toString(_dst + 1
-					, _max - 1
-					, typename std::make_unsigned<Ty>::type(-_value)
-					, _base
-					);
+				, _max - 1
+				, typename std::make_unsigned<Ty>::type(-_value)
+				, _base
+				, _separator
+				);
 			if (_max == 0)
 			{
 				return 0;
@@ -496,24 +498,25 @@ namespace bx
 		}
 
 		return toString(_dst
-					, _max
-					, typename std::make_unsigned<Ty>::type(_value)
-					, _base
-					);
+			, _max
+			, typename std::make_unsigned<Ty>::type(_value)
+			, _base
+			, _separator
+			);
 	}
 
-	int32_t toString(char* _dst, int32_t _max, int32_t _value, uint32_t _base)
+	int32_t toString(char* _dst, int32_t _max, int32_t _value, uint32_t _base, char _separator)
 	{
-		return toStringSigned(_dst, _max, _value, _base);
+		return toStringSigned(_dst, _max, _value, _base, _separator);
 	}
 
-	int32_t toString(char* _dst, int32_t _max, int64_t _value, uint32_t _base)
+	int32_t toString(char* _dst, int32_t _max, int64_t _value, uint32_t _base, char _separator)
 	{
-		return toStringSigned(_dst, _max, _value, _base);
+		return toStringSigned(_dst, _max, _value, _base, _separator);
 	}
 
 	template<typename Ty>
-	int32_t toStringUnsigned(char* _dst, int32_t _max, Ty _value, uint32_t _base)
+	int32_t toStringUnsigned(char* _dst, int32_t _max, Ty _value, uint32_t _base, char _separator)
 	{
 		char data[32];
 		int32_t len = 0;
@@ -523,6 +526,8 @@ namespace bx
 		{
 			return 0;
 		}
+
+		uint32_t count = 1;
 
 		do
 		{
@@ -537,7 +542,16 @@ namespace bx
 				data[len++] = char('a' + rem - 10);
 			}
 
-		} while (_value != 0);
+			if ('\0' != _separator
+			&&  0 == count%3
+			&&  0 != _value)
+			{
+				data[len++] = _separator;
+			}
+
+			++count;
+		}
+		while (0 != _value);
 
 		if (_max < len + 1)
 		{
@@ -551,14 +565,14 @@ namespace bx
 		return int32_t(len);
 	}
 
-	int32_t toString(char* _dst, int32_t _max, uint32_t _value, uint32_t _base)
+	int32_t toString(char* _dst, int32_t _max, uint32_t _value, uint32_t _base, char _separator)
 	{
-		return toStringUnsigned(_dst, _max, _value, _base);
+		return toStringUnsigned(_dst, _max, _value, _base, _separator);
 	}
 
-	int32_t toString(char* _dst, int32_t _max, uint64_t _value, uint32_t _base)
+	int32_t toString(char* _dst, int32_t _max, uint64_t _value, uint32_t _base, char _separator)
 	{
-		return toStringUnsigned(_dst, _max, _value, _base);
+		return toStringUnsigned(_dst, _max, _value, _base, _separator);
 	}
 
 	/*
@@ -1041,6 +1055,20 @@ namespace bx
 		}
 
 		return hd.d;
+	}
+
+	int32_t toString(char* _out, int32_t _max, bool _value)
+	{
+		StringView str(_value ? "true" : "false");
+		strCopy(_out, _max, str);
+		return str.getLength();
+	}
+
+	bool fromString(bool* _out, const StringView& _str)
+	{
+		char ch = toLower(_str.getPtr()[0]);
+		*_out = ch == 't' ||  ch == '1';
+		return 0 != _str.getLength();
 	}
 
 	bool fromString(float* _out, const StringView& _str)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2011-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -59,8 +59,7 @@ void Settings::load(const void* _data, uint32_t _len)
 	}
 	else
 	{
-		BX_UNUSED(_len);
-		m_ini = ini_load( (const char*)_data, m_allocator);
+		m_ini = ini_load( (const char*)_data, _len, m_allocator);
 	}
 }
 
@@ -69,8 +68,8 @@ const char* Settings::get(const StringView& _name) const
 	ini_t* ini = INI_T(m_ini);
 
 	FilePath uri(_name);
-	const StringView  path     = strTrim(uri.getPath(), "/");
-	const StringView& fileName = uri.getFileName();
+	const StringView  path(strTrim(uri.getPath(), "/") );
+	const StringView& fileName(uri.getFileName() );
 	int32_t section = INI_GLOBAL_SECTION;
 
 	if (!path.isEmpty() )
@@ -96,8 +95,8 @@ void Settings::set(const StringView& _name, const StringView& _value)
 	ini_t* ini = INI_T(m_ini);
 
 	FilePath uri(_name);
-	const StringView  path     = strTrim(uri.getPath(), "/");
-	const StringView& fileName = uri.getFileName();
+	const StringView  path(strTrim(uri.getPath(), "/") );
+	const StringView& fileName(uri.getFileName() );
 
 	int32_t section = INI_GLOBAL_SECTION;
 

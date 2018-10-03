@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -7,10 +7,6 @@
 #include <bx/string.h>
 #include <bx/os.h>
 #include <bx/uint32_t.h>
-
-#if !BX_PLATFORM_NONE
-
-#include <stdio.h>
 
 #if BX_CRT_MSVC
 #	include <direct.h>
@@ -51,11 +47,13 @@
 #	elif   BX_PLATFORM_LINUX     \
 		|| BX_PLATFORM_RPI       \
 		|| BX_PLATFORM_STEAMLINK
+#		include <stdio.h>  // fopen
 #		include <unistd.h> // syscall
 #		include <sys/syscall.h>
 #	elif BX_PLATFORM_OSX
 #		include <mach/mach.h> // mach_task_basic_info
 #	elif BX_PLATFORM_HURD
+#		include <stdio.h>           // fopen
 #		include <pthread/pthread.h> // pthread_self
 #	elif BX_PLATFORM_ANDROID
 #		include "debug.h" // getTid is not implemented...
@@ -70,7 +68,8 @@ namespace bx
 #if BX_PLATFORM_WINDOWS
 		::Sleep(_ms);
 #elif  BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT   \
+	|| BX_CRT_NONE
 		BX_UNUSED(_ms);
 		debugOutput("sleep is not implemented"); debugBreak();
 #else
@@ -85,7 +84,8 @@ namespace bx
 #if BX_PLATFORM_WINDOWS
 		::SwitchToThread();
 #elif  BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT   \
+	|| BX_CRT_NONE
 		debugOutput("yield is not implemented"); debugBreak();
 #else
 		::sched_yield();
@@ -178,7 +178,8 @@ namespace bx
 #elif  BX_PLATFORM_EMSCRIPTEN \
 	|| BX_PLATFORM_PS4        \
 	|| BX_PLATFORM_XBOXONE    \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT      \
+	|| BX_CRT_NONE
 		BX_UNUSED(_filePath);
 		return NULL;
 #else
@@ -193,7 +194,8 @@ namespace bx
 #elif  BX_PLATFORM_EMSCRIPTEN \
 	|| BX_PLATFORM_PS4        \
 	|| BX_PLATFORM_XBOXONE    \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT      \
+	|| BX_CRT_NONE
 		BX_UNUSED(_handle);
 #else
 		::dlclose(_handle);
@@ -207,7 +209,8 @@ namespace bx
 #elif  BX_PLATFORM_EMSCRIPTEN \
 	|| BX_PLATFORM_PS4        \
 	|| BX_PLATFORM_XBOXONE    \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT      \
+	|| BX_CRT_NONE
 		BX_UNUSED(_handle, _symbol);
 		return NULL;
 #else
@@ -224,7 +227,8 @@ namespace bx
 		return result;
 #elif  BX_PLATFORM_PS4     \
 	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT   \
+	|| BX_CRT_NONE
 		BX_UNUSED(_name, _out, _inOutSize);
 		return false;
 #else
@@ -253,7 +257,8 @@ namespace bx
 		::SetEnvironmentVariableA(_name, _value);
 #elif  BX_PLATFORM_PS4     \
 	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT   \
+	|| BX_CRT_NONE
 		BX_UNUSED(_name, _value);
 #else
 		::setenv(_name, _value, 1);
@@ -266,7 +271,8 @@ namespace bx
 		::SetEnvironmentVariableA(_name, NULL);
 #elif  BX_PLATFORM_PS4     \
 	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+	|| BX_PLATFORM_WINRT   \
+	|| BX_CRT_NONE
 		BX_UNUSED(_name);
 #else
 		::unsetenv(_name);
@@ -277,7 +283,8 @@ namespace bx
 	{
 #if BX_PLATFORM_PS4     \
  || BX_PLATFORM_XBOXONE \
- || BX_PLATFORM_WINRT
+ || BX_PLATFORM_WINRT   \
+ || BX_CRT_NONE
 		BX_UNUSED(_path);
 		return -1;
 #elif BX_CRT_MSVC
@@ -349,5 +356,3 @@ namespace bx
 	}
 
 } // namespace bx
-
-#endif // !BX_PLATFORM_NONE

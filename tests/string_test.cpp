@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -8,8 +8,26 @@
 #include <bx/string.h>
 #include <bx/handlealloc.h>
 #include <bx/sort.h>
+#include <string>
 
 bx::AllocatorI* g_allocator;
+
+TEST_CASE("stringPrintfTy", "")
+{
+	std::string test;
+	bx::stringPrintf(test, "printf into std::string.");
+	REQUIRE(0 == bx::strCmp(bx::StringView(test), "printf into std::string.") );
+}
+
+TEST_CASE("prettify", "")
+{
+	char tmp[1024];
+	prettify(tmp, BX_COUNTOF(tmp), 4000, bx::Units::Kilo);
+	REQUIRE(0 == bx::strCmp(tmp, "4.00 kB") );
+
+	prettify(tmp, BX_COUNTOF(tmp), 4096, bx::Units::Kibi);
+	REQUIRE(0 == bx::strCmp(tmp, "4.00 KiB") );
+}
 
 TEST_CASE("chars", "")
 {
@@ -206,6 +224,39 @@ TEST_CASE("strFind", "")
 }
 
 template<typename Ty>
+static bool testToStringS(Ty _value, const char* _expected, char _separator = '\0')
+{
+	char tmp[1024];
+	int32_t num = bx::toString(tmp, BX_COUNTOF(tmp), _value, 10, _separator);
+	int32_t len = (int32_t)bx::strLen(_expected);
+	if (0 == bx::strCmp(tmp, _expected)
+	&&  num == len)
+	{
+		return true;
+	}
+
+	printf("result '%s' (%d), expected '%s' (%d)\n", tmp, num, _expected, len);
+	return false;
+}
+
+TEST_CASE("toString intXX_t/uintXX_t", "")
+{
+	REQUIRE(testToStringS(0,          "0") );
+	REQUIRE(testToStringS(-256,       "-256") );
+	REQUIRE(testToStringS(INT32_MAX,  "2147483647") );
+	REQUIRE(testToStringS(UINT32_MAX, "4294967295") );
+	REQUIRE(testToStringS(INT64_MAX,  "9223372036854775807") );
+	REQUIRE(testToStringS(UINT64_MAX, "18446744073709551615") );
+
+	REQUIRE(testToStringS(0,          "0", ',') );
+	REQUIRE(testToStringS(-256,       "-256", ',') );
+	REQUIRE(testToStringS(INT32_MAX,  "2,147,483,647", ',') );
+	REQUIRE(testToStringS(UINT32_MAX, "4,294,967,295", ',') );
+	REQUIRE(testToStringS(INT64_MAX,  "9,223,372,036,854,775,807", ',') );
+	REQUIRE(testToStringS(UINT64_MAX, "18,446,744,073,709,551,615", ',') );
+}
+
+template<typename Ty>
 static bool testToString(Ty _value, const char* _expected)
 {
 	char tmp[1024];
@@ -219,14 +270,6 @@ static bool testToString(Ty _value, const char* _expected)
 
 	printf("result '%s' (%d), expected '%s' (%d)\n", tmp, num, _expected, len);
 	return false;
-}
-
-TEST_CASE("toString int32_t/uint32_t", "")
-{
-	REQUIRE(testToString(0,          "0") );
-	REQUIRE(testToString(-256,       "-256") );
-	REQUIRE(testToString(INT32_MAX,  "2147483647") );
-	REQUIRE(testToString(UINT32_MAX, "4294967295") );
 }
 
 TEST_CASE("toString double", "")
@@ -255,6 +298,8 @@ TEST_CASE("toString double", "")
 	REQUIRE(testToString(0.000000000123123,       "1.23123e-10") );
 	REQUIRE(testToString(0.0000000001,            "1e-10") );
 	REQUIRE(testToString(-270.000000,             "-270.0") );
+	REQUIRE(testToString(2.225073858507201e-308,  "2.225073858507201e-308") );
+	REQUIRE(testToString(-79.39773355813419,      "-79.39773355813419") );
 }
 
 static bool testFromString(double _value, const char* _input)
@@ -303,6 +348,7 @@ TEST_CASE("fromString double", "")
 	REQUIRE(testFromString(0.000000000123123,       "1.23123e-10") );
 	REQUIRE(testFromString(0.0000000001,            "1e-10") );
 	REQUIRE(testFromString(-270.000000,             "-270.0") );
+	REQUIRE(testFromString(2.2250738585072011e-308, "2.2250738585072011e-308") );
 }
 
 static bool testFromString(int32_t _value, const char* _input)
@@ -352,7 +398,7 @@ TEST_CASE("StringView", "")
 	st.append("test");
 	REQUIRE(8 == st.getLength() );
 
-	st.append("test", 2);
+	st.append(bx::StringView("test", 2) );
 	REQUIRE(10 == st.getLength() );
 
 	REQUIRE(0 == bx::strCmp(st.getPtr(), "testtestte") );
@@ -388,4 +434,10 @@ TEST_CASE("Trim", "")
 
 	bx::FilePath uri("/555333/podmac/");
 	REQUIRE(0 == bx::strCmp(bx::strTrim(uri.getPath(), "/"), "555333/podmac") );
+}
+
+TEST_CASE("strWord", "")
+{
+	REQUIRE(bx::strWord(" abvgd-1389.0").isEmpty() );
+	REQUIRE(0 == bx::strCmp(bx::strWord("abvgd-1389.0"), "abvgd") );
 }

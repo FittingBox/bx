@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2010-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
  */
 
@@ -203,21 +203,6 @@ namespace bx
 
 	///
 	float halfToFloat(uint16_t _a);
-
-	///
-	uint16_t uint16_min(uint16_t _a, uint16_t _b);
-
-	///
-	uint16_t uint16_max(uint16_t _a, uint16_t _b);
-
-	///
-	int64_t int64_min(int64_t _a, int64_t _b);
-
-	///
-	int64_t int64_max(int64_t _a, int64_t _b);
-
-	///
-	int64_t int64_clamp(int64_t _a, int64_t _min, int64_t _max);
 
 	///
 	uint32_t uint64_cntbits_ref(uint64_t _val);
